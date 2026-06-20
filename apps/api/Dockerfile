@@ -20,4 +20,4 @@ COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 EXPOSE 4000
-CMD ["node", "apps/api/dist/server.js"]
+CMD ["sh", "-c", "npx prisma db push && npx tsx prisma/seed.ts && node apps/api/dist/server.js"]
