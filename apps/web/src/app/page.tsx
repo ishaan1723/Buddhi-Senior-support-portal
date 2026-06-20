@@ -10,13 +10,9 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = window.localStorage.getItem("buddhi_token");
-    if (!token) {
-      router.replace("/login");
-    } else {
-      setLoading(false);
-    }
-  }, [router]);
+    // Temporarily disabled login redirect for review
+    setLoading(false);
+  }, []);
 
   if (loading) {
     return (
