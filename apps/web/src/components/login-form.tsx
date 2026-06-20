@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 
 export function LoginForm() {
+  const router = useRouter();
   const [phone, setPhone] = useState("");
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [message, setMessage] = useState("");
@@ -38,6 +40,7 @@ export function LoginForm() {
       window.localStorage.setItem("buddhi_phone", result.user.phone);
       window.localStorage.setItem("buddhi_name", result.user.fullName);
       setMessage("You are logged in.");
+      router.replace("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not verify OTP");
     }

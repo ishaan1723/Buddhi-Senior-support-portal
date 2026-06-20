@@ -1,7 +1,31 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, CalendarCheck, ListChecks, Phone, Users } from "lucide-react";
 import { ActionTile } from "@/components/action-tile";
 
 export default function HomePage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const token = window.localStorage.getItem("buddhi_token");
+    if (!token) {
+      router.replace("/login");
+    } else {
+      setLoading(false);
+    }
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div className="page-shell flex min-h-[50vh] items-center justify-center">
+        <p className="text-xl font-bold text-slate-800">Loading Buddhi portal...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="page-shell">
       <section className="rounded-md border-2 border-trust bg-white p-5 shadow-soft">
