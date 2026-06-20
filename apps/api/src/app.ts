@@ -31,6 +31,10 @@ app.use(morgan("tiny"));
 app.use(generalLimiter);
 app.use(verifyOrigin);
 
+app.get("/", (_req, res) => {
+  res.json({ ok: true, message: "Buddhi Senior Support API is running." });
+});
+
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "buddhi-api" });
 });
