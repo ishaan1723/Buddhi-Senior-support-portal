@@ -1,0 +1,211 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String             @id @default(cuid())
+  fullName           String
+  phone              String             @unique
+  dateOfBirth        DateTime?
+  addressLine1       String?
+  addressLine2       String?
+  locality           String             @default("H-West Ward")
+  city               String             @default("Mumbai")
+  preferredLanguage  String             @default("en")
+  role               String             @default("SENIOR")
+  isActive           Boolean            @default(true)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  otps               OtpCode[]
+  emergencyContacts  EmergencyContact[]
+  emergencyLogs      EmergencyLog[]
+  bookings           Booking[]
+  reviews            Review[]
+
+  @@index([phone])
+}
+
+model OtpCode {
+  id          String    @id @default(cuid())
+  phone       String
+  codeHash    String
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  attempts    Int       @default(0)
+  createdAt   DateTime  @default(now())
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([phone, expiresAt])
+}
+
+model EmergencyContact {
+  id          String          @id @default(cuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  phone       String
+  relation    String
+  priority    Int             @default(1)
+  canReceiveSms Boolean       @default(true)
+  canReceiveWhatsapp Boolean  @default(true)
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([userId, priority])
+}
+
+model EmergencyLog {
+  id              String                 @id @default(cuid())
+  userId          String?
+  user            User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  phone           String
+  status          String                 @default("TRIGGERED")
+  latitude        Float?
+  longitude       Float?
+  addressHint     String?
+  notes           String?
+  triggeredAt     DateTime               @default(now())
+  acknowledgedAt  DateTime?
+  resolvedAt      DateTime?
+  notifications   EmergencyNotification[]
+
+  @@index([phone, triggeredAt])
+  @@index([status])
+}
+
+model EmergencyNotification {
+  id              String               @id @default(cuid())
+  emergencyLogId  String
+  emergencyLog    EmergencyLog         @relation(fields: [emergencyLogId], references: [id], onDelete: Cascade)
+  channel         String
+  recipientName   String
+  recipientPhone  String
+  status          String               @default("PENDING")
+  provider        String?
+  providerMessageId String?
+  attemptCount    Int                   @default(0)
+  lastError       String?
+  nextRetryAt     DateTime?
+  sentAt          DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([status, nextRetryAt])
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  vendors     Vendor[]
+}
+
+model Vendor {
+  id                String                @id @default(cuid())
+  categoryId        String
+  category          Category              @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  name              String
+  phone             String
+  whatsapp          String?
+  address           String
+  locality          String                @default("H-West Ward")
+  description       String
+  yearsExperience   Int?
+  status            String                @default("PENDING")
+  buddhiVerified    Boolean               @default(false)
+  averageRating     Float                 @default(0)
+  reviewCount       Int                   @default(0)
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  checklist         VendorVerification?
+  reviews           Review[]
+  bookings          Booking[]
+
+  @@index([categoryId, status, buddhiVerified])
+}
+
+model VendorVerification {
+  id                      String                  @id @default(cuid())
+  vendorId                String                  @unique
+  vendor                  Vendor                  @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  identityVerified        String                  @default("PENDING")
+  addressVerified         String                  @default("PENDING")
+  licenseVerified         String                  @default("PENDING")
+  referencesChecked       String                  @default("PENDING")
+  serviceQualityApproved  String                  @default("PENDING")
+  notes                   String?
+  verifiedByAdminId       String?
+  verifiedByAdmin         Admin?                  @relation(fields: [verifiedByAdminId], references: [id], onDelete: SetNull)
+  updatedAt               DateTime                @updatedAt
+  createdAt               DateTime                @default(now())
+}
+
+model Booking {
+  id              String         @id @default(cuid())
+  userId          String?
+  user            User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  vendorId        String
+  vendor          Vendor         @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  requesterName   String
+  requesterPhone  String
+  supportNumber   String
+  status          String         @default("REQUESTED")
+  preferredTime   DateTime?
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  reviews         Review[]
+
+  @@index([requesterPhone, createdAt])
+  @@index([status])
+}
+
+model Review {
+  id          String    @id @default(cuid())
+  vendorId    String
+  vendor      Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  bookingId   String?
+  booking     Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  rating      Int
+  comment     String?
+  isPublished Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([vendorId, isPublished])
+}
+
+model Admin {
+  id             String               @id @default(cuid())
+  fullName       String
+  email          String               @unique
+  passwordHash   String
+  isActive       Boolean              @default(true)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  verifications  VendorVerification[]
+}
+
+model SupportNumber {
+  id          String    @id @default(cuid())
+  label       String
+  phone       String
+  whatsapp    String?
+  isPrimary   Boolean   @default(false)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
