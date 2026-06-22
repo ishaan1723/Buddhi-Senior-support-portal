@@ -6,7 +6,11 @@ import { Header } from "@/components/header";
 
 export const metadata: Metadata = {
   title: "Buddhi - Senior Support Portal",
-  description: "Emergency help, trusted local services, and concierge support for H-West Ward seniors."
+  description: "Emergency help, trusted local services, and concierge support for H-West Ward seniors.",
+  manifest: "/manifest.json",
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  }
 };
 
 export const viewport: Viewport = {

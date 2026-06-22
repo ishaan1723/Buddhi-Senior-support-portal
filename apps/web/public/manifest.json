@@ -1,0 +1,24 @@
+{
+  "name": "Buddhi - Senior Support Portal",
+  "short_name": "Buddhi",
+  "description": "Emergency help, trusted local services, and concierge support for H-West Ward seniors.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fffdf7",
+  "theme_color": "#075985",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
