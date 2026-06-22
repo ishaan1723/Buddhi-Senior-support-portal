@@ -38,3 +38,16 @@ export async function listBookings() {
     include: { vendor: { include: { category: true } }, user: true }
   });
 }
+
+export async function listUserBookings(userId: string, phone: string) {
+  return prisma.booking.findMany({
+    where: {
+      OR: [
+        { userId },
+        { requesterPhone: phone }
+      ]
+    },
+    orderBy: { createdAt: "desc" },
+    include: { vendor: { include: { category: true } } }
+  });
+}

@@ -22,6 +22,18 @@ export type Vendor = {
   category: Category;
 };
 
+export type Booking = {
+  id: string;
+  vendorId: string;
+  vendor: Vendor;
+  requesterName: string;
+  requesterPhone: string;
+  supportNumber: string;
+  status: "REQUESTED" | "CONTACTED" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
+  preferredTime?: string;
+  notes?: string;
+  createdAt: string;
+};
 type ApiInit = RequestInit & {
   token?: string;
   next?: { revalidate?: number };
