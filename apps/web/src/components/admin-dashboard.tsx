@@ -124,6 +124,25 @@ export function AdminDashboard() {
     }
   }
 
+  function getRowTitle(row: AdminRow) {
+    switch (active) {
+      case "feedback": {
+        const user = (row.user as Record<string, string>) || {};
+        const vendor = (row.vendor as Record<string, string>) || {};
+        return `Feedback for ${vendor.name || "Vendor"} by ${user.fullName || "Member"}`;
+      }
+      case "emergency-contacts": {
+        const user = (row.user as Record<string, string>) || {};
+        return `Emergency Contact for ${user.fullName || "Member"}`;
+      }
+      case "support-numbers": {
+        return String(row.label || "Support Line");
+      }
+      default:
+        return String(row.name || row.fullName || row.id);
+    }
+  }
+
   function renderAdminRow(row: AdminRow) {
     switch (active) {
       case "vendors": {
@@ -271,6 +290,79 @@ export function AdminDashboard() {
           </div>
         );
       }
+      case "emergency-contacts": {
+        const user = (row.user as Record<string, string>) || {};
+        return (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs uppercase tracking-wider bg-trust/10 text-trust font-black px-2 py-0.5 rounded">
+                Emergency Contact
+              </span>
+              <span className={`text-xs font-bold px-2 py-0.5 rounded border ${
+                row.isActive ? "bg-green-50 border-leaf text-leaf" : "bg-gray-50 border-gray-300 text-gray-500"
+              }`}>
+                {row.isActive ? "Active" : "Inactive"}
+              </span>
+            </div>
+            <div className="text-sm text-gray-855 flex flex-col gap-1 mt-1">
+              <span>👤 <strong>Contact Name:</strong> {row.name as string} ({row.relation as string})</span>
+              <span>📞 <strong>Contact Phone:</strong> {row.phone as string}</span>
+              <span>👴 <strong>For Senior:</strong> {user.fullName || "Buddhi Member"} ({user.phone || "Unknown"})</span>
+              <span>🚨 <strong>Priority:</strong> Level {String(row.priority)}</span>
+              <span>💬 <strong>Channels:</strong> {row.canReceiveSms ? "SMS " : ""}{row.canReceiveWhatsapp ? "• WhatsApp" : ""}</span>
+            </div>
+          </div>
+        );
+      }
+      case "support-numbers": {
+        return (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs uppercase tracking-wider bg-leaf/10 text-leaf font-black px-2 py-0.5 rounded">
+                Support Line
+              </span>
+              {row.isPrimary ? (
+                <span className="text-xs font-bold bg-amber-50 border border-saffron text-saffron px-2 py-0.5 rounded">
+                  Primary Helpdesk
+                </span>
+              ) : null}
+              <span className={`text-xs font-bold px-2 py-0.5 rounded border ${
+                row.isActive ? "bg-green-50 border-leaf text-leaf" : "bg-gray-50 border-gray-300 text-gray-500"
+              }`}>
+                {row.isActive ? "Active" : "Inactive"}
+              </span>
+            </div>
+            <div className="text-sm text-gray-855 flex flex-col gap-1 mt-1">
+              <span>📞 <strong>Label:</strong> {row.label as string}</span>
+              <span>☎️ <strong>Phone Number:</strong> {row.phone as string}</span>
+              {row.whatsapp ? <span>💬 <strong>WhatsApp:</strong> {row.whatsapp as string}</span> : null}
+            </div>
+          </div>
+        );
+      }
+      case "feedback": {
+        const vendor = (row.vendor as Record<string, string>) || {};
+        const user = (row.user as Record<string, string>) || {};
+        const rating = Number(row.rating || 0);
+        return (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs uppercase tracking-wider bg-saffron/10 text-saffron font-black px-2 py-0.5 rounded">
+                Senior Feedback
+              </span>
+              <span className="text-xs font-black text-saffron flex items-center gap-0.5">
+                {"★".repeat(rating)}{"☆".repeat(5 - rating)} ({rating} stars)
+              </span>
+            </div>
+            <p className="text-lg font-bold text-ink mt-1">"{row.comment as string || "No comment provided."}"</p>
+            <div className="text-sm text-gray-850 flex flex-col gap-1 mt-1">
+              <span>💼 <strong>Vendor:</strong> {vendor.name || "Unknown Vendor"}</span>
+              <span>👤 <strong>Reviewed By:</strong> {user.fullName || "Buddhi Member"} ({user.phone || "Unknown"})</span>
+              <span>📅 <strong>Date:</strong> {new Date(row.createdAt as string).toLocaleString()}</span>
+            </div>
+          </div>
+        );
+      }
       default:
         return <pre className="text-xs bg-gray-50 p-2 rounded overflow-auto max-h-40">{JSON.stringify(row, null, 2)}</pre>;
     }
@@ -326,7 +418,7 @@ export function AdminDashboard() {
           <article key={row.id} className="panel border-2 border-gray-200">
             <div className="flex flex-col gap-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <h2 className="text-xl font-black text-ink">{String(row.name || row.fullName || row.id)}</h2>
+                <h2 className="text-xl font-black text-ink">{getRowTitle(row)}</h2>
                 <div className="flex items-center gap-2">
                   {row.status ? (
                     <span className="text-xs uppercase tracking-wider bg-saffron/10 text-saffron font-bold px-2 py-0.5 rounded">
