@@ -4,6 +4,32 @@ import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, BadgeCheck, Phone, Send, Mic, MicOff } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 
+// Programmatic Audio Synth for senior-accessible warning sound indicators
+function playBeep(frequency = 440, duration = 0.15) {
+  if (typeof window === "undefined") return;
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.value = frequency;
+
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) {
+    console.warn("AudioContext failed to beep:", e);
+  }
+}
+
 export default function SosPage() {
   const [status, setStatus] = useState<"idle" | "counting" | "sending" | "sent" | "error">("idle");
   const [error, setError] = useState("");
@@ -101,7 +127,8 @@ export default function SosPage() {
     setStatus("counting");
     setSecondsLeft(10);
 
-    // Haptic vibration feedback
+    // Initial alert beep and vibration
+    playBeep(400, 0.35);
     if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
       window.navigator.vibrate([300, 100, 300]);
     }
@@ -115,7 +142,11 @@ export default function SosPage() {
       count -= 1;
       setSecondsLeft(count);
 
-      // Repeat haptics
+      // Warning sound sonar tone: gets higher pitch as time runs out
+      const sonarPitch = 480 + (10 - count) * 90;
+      playBeep(sonarPitch, 0.18);
+
+      // Repeat haptics (supported on Android/Chrome)
       if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
         window.navigator.vibrate(150);
       }
@@ -138,6 +169,10 @@ export default function SosPage() {
     if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
       window.navigator.vibrate(0);
     }
+    // Low double tone for cancellation
+    playBeep(250, 0.15);
+    setTimeout(() => playBeep(200, 0.25), 100);
+
     setStatus("idle");
   }
 
@@ -148,6 +183,7 @@ export default function SosPage() {
     if (!phone) {
       setStatus("error");
       setError("You must be logged in to send emergency alerts. Please check your connection.");
+      playBeep(180, 0.5);
       return;
     }
     try {
@@ -157,12 +193,18 @@ export default function SosPage() {
       });
       setStatus("sent");
 
+      // Happy double success chime
+      playBeep(780, 0.15);
+      setTimeout(() => playBeep(1040, 0.35), 120);
+
       if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
         window.navigator.vibrate([500, 100, 500]);
       }
     } catch (err) {
       setStatus("error");
       setError(err instanceof Error ? err.message : "Failed to connect to Buddhi server");
+      // Low error chime
+      playBeep(180, 0.6);
     }
   }
 

@@ -3,6 +3,32 @@ import { AlertTriangle, BadgeCheck, Phone, Send, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
 
+// Programmatic Audio Synth for senior-accessible warning sound indicators
+function playBeep(frequency = 440, duration = 0.15) {
+  if (typeof window === "undefined") return;
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.value = frequency;
+
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) {
+    console.warn("AudioContext failed to beep:", e);
+  }
+}
+
 export function FixedSosButton() {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<"idle" | "counting" | "sending" | "sent" | "error">("idle");
@@ -25,7 +51,8 @@ export function FixedSosButton() {
     setStatus("counting");
     setSecondsLeft(10);
 
-    // Haptic feedback (initial vibration)
+    // Initial alert sound and haptic vibration
+    playBeep(400, 0.35);
     if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
       window.navigator.vibrate([300, 100, 300]);
     }
@@ -39,7 +66,11 @@ export function FixedSosButton() {
       count -= 1;
       setSecondsLeft(count);
 
-      // Pulse vibration each second to confirm countdown progress
+      // Warning sound sonar tone: gets higher pitch as time runs out
+      const sonarPitch = 480 + (10 - count) * 90;
+      playBeep(sonarPitch, 0.18);
+
+      // Pulse haptic vibration each second (supported on Android/Chrome)
       if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
         window.navigator.vibrate(150);
       }
@@ -63,6 +94,10 @@ export function FixedSosButton() {
     if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
       window.navigator.vibrate(0);
     }
+    // Low double tone for cancellation
+    playBeep(250, 0.15);
+    setTimeout(() => playBeep(200, 0.25), 100);
+    
     setStatus("idle");
     setOpen(false);
   }
@@ -74,6 +109,7 @@ export function FixedSosButton() {
     if (!phone) {
       setStatus("error");
       setError("Phone number is required. Please sign in first.");
+      playBeep(180, 0.5);
       return;
     }
     try {
@@ -83,13 +119,19 @@ export function FixedSosButton() {
       });
       setStatus("sent");
       
-      // Long final vibration to confirm sent status
+      // Happy double success chime
+      playBeep(780, 0.15);
+      setTimeout(() => playBeep(1040, 0.35), 120);
+
+      // Long final vibration
       if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
         window.navigator.vibrate([500, 100, 500]);
       }
     } catch (err) {
       setStatus("error");
       setError(err instanceof Error ? err.message : "Could not connect to server");
+      // Low emergency error chime
+      playBeep(180, 0.6);
     }
   }
 
