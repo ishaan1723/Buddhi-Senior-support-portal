@@ -62,3 +62,16 @@ textarea {
     @apply min-h-14 rounded-xl border-2 border-ink px-6 py-3 text-lg font-extrabold shadow-[4px_4px_0px_0px_rgba(17,24,39,1)] transition-all duration-100 flex items-center justify-center select-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none;
   }
 }
+
+@keyframes pulse-red {
+  0%, 100% {
+    background-color: rgb(239, 68, 68);
+  }
+  50% {
+    background-color: rgb(153, 27, 27);
+  }
+}
+
+.animate-pulse-red {
+  animation: pulse-red 1.5s infinite ease-in-out;
+}

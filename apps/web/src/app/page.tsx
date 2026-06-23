@@ -10,10 +10,16 @@ export default function HomePage() {
   const [seniorName, setSeniorName] = useState("Member");
   const [phone, setPhone] = useState("");
 
+  // PWA Install Prompt States
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isIos, setIsIos] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
   useEffect(() => {
     const token = window.localStorage.getItem("buddhi_token");
     if (!token) {
       router.replace("/login");
+      return;
     } else {
       const name = window.localStorage.getItem("buddhi_name");
       const phoneNum = window.localStorage.getItem("buddhi_phone");
@@ -21,7 +27,36 @@ export default function HomePage() {
       if (phoneNum) setPhone(phoneNum);
       setLoading(false);
     }
+
+    // Detect if app is running as PWA
+    const isMinStandalone = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone;
+    setIsStandalone(!!isMinStandalone);
+
+    // Detect iOS devices
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const ios = /iphone|ipad|ipod/.test(userAgent);
+    setIsIos(ios);
+
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    };
   }, [router]);
+
+  async function handleInstallApp() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === "accepted") {
+      setDeferredPrompt(null);
+    }
+  }
 
   function signOut() {
     window.localStorage.removeItem("buddhi_token");
@@ -67,6 +102,34 @@ export default function HomePage() {
           </button>
         </div>
       </section>
+
+      {/* PWA INSTALLATION BANNER */}
+      {!isStandalone && (deferredPrompt || isIos) ? (
+        <section className="mt-6">
+          <div className="premium-card bg-amber-50 border-saffron border-l-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-black text-saffron uppercase">📲 Install Buddhi App</h2>
+              {deferredPrompt ? (
+                <p className="mt-1 text-base text-gray-700 font-bold">
+                  Add Buddhi directly to your home screen for quick, one-click access!
+                </p>
+              ) : (
+                <p className="mt-1 text-base text-gray-700 font-bold">
+                  iPhone User? Tap Safari's share icon <span className="text-trust font-black">⎋</span> (at bottom) and choose <strong className="text-ink">"Add to Home Screen"</strong>.
+                </p>
+              )}
+            </div>
+            {deferredPrompt && (
+              <button
+                onClick={handleInstallApp}
+                className="btn-tactile bg-saffron text-white border-saffron hover:bg-amber-700 w-full md:w-auto shrink-0"
+              >
+                Install App Now
+              </button>
+            )}
+          </div>
+        </section>
+      ) : null}
 
       {/* DASHBOARD ACTION TILES */}
       <section className="mt-8 grid gap-5 sm:grid-cols-2" aria-label="Quick actions">

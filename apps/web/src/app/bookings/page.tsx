@@ -51,16 +51,16 @@ export default function BookingsPage() {
   function getStatusLabel(status: Booking["status"]) {
     switch (status) {
       case "COMPLETED":
-        return "Completed";
+        return "Service completed successfully";
       case "CONTACTED":
-        return "Support Call Completed";
+        return "Buddhi has contacted you to finalize booking";
       case "CONFIRMED":
-        return "Booking Confirmed";
+        return "Booking confirmed by Buddhi";
       case "CANCELLED":
-        return "Cancelled";
+        return "Booking request cancelled";
       case "REQUESTED":
       default:
-        return "Requested - Support Will Call";
+        return "Buddhi is reviewing your request (we will call you shortly)";
     }
   }
 

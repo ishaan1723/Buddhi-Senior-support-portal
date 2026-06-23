@@ -388,9 +388,9 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="mt-5">
+    <div className="mt-4">
       {summary ? (
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" aria-label="Admin summary">
+        <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5" aria-label="Admin summary">
           <Metric label="Pending vendors" value={summary.vendorsPending} />
           <Metric label="Approved vendors" value={summary.vendorsApproved} />
           <Metric label="Open SOS" value={summary.sosOpen} />
@@ -399,12 +399,14 @@ export function AdminDashboard() {
         </section>
       ) : null}
 
-      <div className="mt-5 flex gap-2 overflow-x-auto pb-2">
+      <div className="mt-5 flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
         {tabs.map(([id, label]) => (
           <button
             key={id}
             type="button"
-            className={`touch-button shrink-0 border-2 font-bold ${active === id ? "border-trust bg-trust text-white" : "border-gray-300 bg-white"}`}
+            className={`shrink-0 border-2 font-extrabold rounded-xl transition-all duration-150 select-none min-h-11 px-4 py-2 text-sm sm:min-h-14 sm:px-6 sm:py-3 sm:text-lg ${
+              active === id ? "border-trust bg-trust text-white shadow-soft" : "border-gray-300 bg-white text-gray-850 hover:bg-gray-50"
+            }`}
             onClick={() => switchTab(id)}
           >
             {label}
@@ -450,9 +452,9 @@ export function AdminDashboard() {
 
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="panel border-2 border-gray-150">
-      <p className="text-sm font-semibold uppercase text-gray-600">{label}</p>
-      <p className="mt-1 text-3xl font-black text-trust">{value}</p>
+    <div className="panel border-2 border-gray-150 !p-4">
+      <p className="text-xs sm:text-sm font-bold uppercase text-gray-500">{label}</p>
+      <p className="mt-1 text-2xl sm:text-3xl font-black text-trust">{value}</p>
     </div>
   );
 }

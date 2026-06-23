@@ -1,66 +1,92 @@
 "use client";
 import { AlertTriangle, BadgeCheck, Phone, Send, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
 
 export function FixedSosButton() {
   const [open, setOpen] = useState(false);
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "counting" | "sending" | "sent" | "error">("idle");
   const [error, setError] = useState("");
+  const [secondsLeft, setSecondsLeft] = useState(10);
+  const countdownIntervalRef = useRef<number | null>(null);
 
-  // Hold States
-  const [isHolding, setIsHolding] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(3);
-  const holdIntervalRef = useRef<number | null>(null);
+  // Clean up interval on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownIntervalRef.current) {
+        window.clearInterval(countdownIntervalRef.current);
+      }
+    };
+  }, []);
 
-  function startHold(event: React.PointerEvent<HTMLButtonElement>) {
-    // Prevent default behaviour to avoid accidental trigger
-    event.preventDefault();
-    setIsHolding(true);
-    setSecondsLeft(3);
-    setStatus("idle");
+  function triggerSosFlow() {
     setError("");
+    setOpen(true);
+    setStatus("counting");
+    setSecondsLeft(10);
 
-    let count = 3;
-    holdIntervalRef.current = window.setInterval(() => {
+    // Haptic feedback (initial vibration)
+    if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
+      window.navigator.vibrate([300, 100, 300]);
+    }
+
+    if (countdownIntervalRef.current) {
+      window.clearInterval(countdownIntervalRef.current);
+    }
+
+    let count = 10;
+    countdownIntervalRef.current = window.setInterval(() => {
       count -= 1;
       setSecondsLeft(count);
+
+      // Pulse vibration each second to confirm countdown progress
+      if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate(150);
+      }
+
       if (count <= 0) {
-        if (holdIntervalRef.current) {
-          window.clearInterval(holdIntervalRef.current);
-          holdIntervalRef.current = null;
+        if (countdownIntervalRef.current) {
+          window.clearInterval(countdownIntervalRef.current);
+          countdownIntervalRef.current = null;
         }
-        setIsHolding(false);
-        setOpen(true);
         void sendSos();
       }
     }, 1000);
   }
 
-  function cancelHold() {
-    if (holdIntervalRef.current) {
-      window.clearInterval(holdIntervalRef.current);
-      holdIntervalRef.current = null;
+  function cancelSosFlow() {
+    if (countdownIntervalRef.current) {
+      window.clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
     }
-    setIsHolding(false);
-    setSecondsLeft(3);
+    // Cancel any active vibration
+    if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
+      window.navigator.vibrate(0);
+    }
+    setStatus("idle");
+    setOpen(false);
   }
 
   async function sendSos() {
     setStatus("sending");
     setError("");
-    const phone = window.localStorage.getItem("buddhi_phone") || prompt("Please enter your phone number to identify yourself:") || "";
+    const phone = window.localStorage.getItem("buddhi_phone") || "";
     if (!phone) {
       setStatus("error");
-      setError("Phone number is required to trigger SOS.");
+      setError("Phone number is required. Please sign in first.");
       return;
     }
     try {
       await apiFetch("/api/sos/trigger", {
         method: "POST",
-        body: JSON.stringify({ phone, notes: "Triggered from Buddhi web portal (3s Hold)" })
+        body: JSON.stringify({ phone, notes: "Triggered from Buddhi web portal (10s Instant Countdown)" })
       });
       setStatus("sent");
+      
+      // Long final vibration to confirm sent status
+      if (typeof window !== "undefined" && window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate([500, 100, 500]);
+      }
     } catch (err) {
       setStatus("error");
       setError(err instanceof Error ? err.message : "Could not connect to server");
@@ -72,106 +98,133 @@ export function FixedSosButton() {
 
   return (
     <>
+      {/* Floating SOS Trigger Button */}
       <button
         type="button"
-        onPointerDown={startHold}
-        onPointerUp={cancelHold}
-        onPointerLeave={cancelHold}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            setOpen(true);
-            void sendSos();
-          }
-        }}
-        className="fixed bottom-24 right-4 z-40 flex h-20 w-20 flex-col items-center justify-center rounded-full border-4 border-white bg-danger text-lg font-bold text-white shadow-soft active:scale-95 transition-transform select-none"
-        aria-label="Hold for 3 seconds to send emergency SOS"
+        onClick={triggerSosFlow}
+        className="fixed bottom-24 right-4 z-30 flex h-20 w-20 flex-col items-center justify-center rounded-full border-4 border-white bg-danger text-lg font-bold text-white shadow-soft active:scale-95 transition-transform select-none animate-bounce"
+        aria-label="Trigger emergency SOS"
       >
-        <span className="text-xs uppercase tracking-wider text-red-200">Hold</span>
-        <span className="text-xl leading-none">SOS</span>
+        <span className="text-xs uppercase tracking-wider text-red-200">Tap</span>
+        <span className="text-xl font-black leading-none">SOS</span>
       </button>
 
-      {/* HOLD COUNTDOWN OVERLAY */}
-      {isHolding ? (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 text-white p-5">
-          <div className="relative flex h-48 w-48 items-center justify-center rounded-full border-8 border-danger bg-danger/10 shadow-soft">
-            <span className="text-8xl font-black text-danger animate-pulse">{secondsLeft}</span>
-          </div>
-          <h2 className="mt-8 text-3xl font-black text-center tracking-wide text-danger">HOLDING FOR SOS EMERGENCY</h2>
-          <p className="mt-3 text-xl text-gray-300 text-center">Do not let go! Release button to cancel.</p>
-        </div>
-      ) : null}
-
-      {/* SOS MODAL */}
+      {/* FULL-SCREEN SOS COUNTDOWN & FLASH OVERLAY */}
       {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby="sos-title">
-          <div className="w-full max-w-md rounded-md border-2 border-trust bg-white p-6 text-ink shadow-soft animate-in fade-in zoom-in duration-200">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-8 w-8 text-danger" />
-                <h2 id="sos-title" className="text-2xl font-black text-ink">
+        <div 
+          className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-colors duration-300 ${
+            status === "counting" ? "animate-pulse-red text-white" : "bg-black/90 text-white"
+          }`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="sos-title"
+        >
+          <div className="w-full max-w-lg rounded-2xl border-4 border-ink bg-white p-8 text-ink shadow-[8px_8px_0px_0px_rgba(17,24,39,1)]">
+            <div className="flex items-center justify-between border-b-2 border-gray-200 pb-4">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-10 w-10 text-danger animate-bounce" />
+                <h2 id="sos-title" className="text-3xl font-black text-ink uppercase tracking-tight">
                   Emergency SOS
                 </h2>
               </div>
-              <button
-                className="rounded-md border-2 border-gray-300 p-2 hover:bg-gray-100"
-                type="button"
-                onClick={() => setOpen(false)}
-                aria-label="Close SOS"
-              >
-                <X aria-hidden="true" className="h-6 w-6 text-gray-700" />
-              </button>
+              {status !== "counting" && status !== "sending" ? (
+                <button
+                  className="rounded-lg border-2 border-gray-300 p-2 hover:bg-gray-100"
+                  type="button"
+                  onClick={cancelSosFlow}
+                  aria-label="Close"
+                >
+                  <X aria-hidden="true" className="h-6 w-6 text-gray-700" />
+                </button>
+              ) : null}
             </div>
 
-            <div className="mt-5">
-              {status === "sending" ? (
-                <div className="text-center py-6">
-                  <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-danger border-t-transparent"></div>
-                  <p className="mt-4 text-xl font-bold text-gray-800">Sending alerts to family & responders...</p>
+            <div className="mt-6">
+              {/* COUNTDOWN STATE */}
+              {status === "counting" ? (
+                <div className="text-center py-4">
+                  <p className="text-2xl font-black text-danger uppercase tracking-wide">
+                    Sending emergency alerts in
+                  </p>
+                  <div className="my-8 flex justify-center">
+                    <div className="flex h-36 w-36 items-center justify-center rounded-full border-8 border-danger bg-red-50 text-7xl font-black text-danger shadow-soft animate-ping">
+                      {secondsLeft}
+                    </div>
+                  </div>
+                  <p className="text-lg text-gray-700 font-semibold mb-6">
+                    Responders and family will be notified automatically.
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={cancelSosFlow}
+                    className="touch-button w-full bg-trust text-white font-extrabold text-2xl py-5 border-4 border-ink shadow-[4px_4px_0px_0px_rgba(17,24,39,1)] hover:translate-y-[1px] active:translate-y-[3px]"
+                  >
+                    STOP / CANCEL ALERT
+                  </button>
                 </div>
               ) : null}
 
-              {status === "sent" ? (
-                <div className="rounded-md bg-green-50 border-2 border-leaf p-4 text-center">
-                  <BadgeCheck className="mx-auto h-12 w-12 text-leaf" />
-                  <h3 className="mt-3 text-xl font-black text-leaf">ALERTS DISPATCHED!</h3>
-                  <p className="mt-2 text-base text-gray-800 font-medium">
-                    Your family, local responder, and Buddhi support have been notified. Please stay near your phone.
+              {/* SENDING STATE */}
+              {status === "sending" ? (
+                <div className="text-center py-8">
+                  <div className="inline-block h-16 w-16 animate-spin rounded-full border-4 border-danger border-t-transparent"></div>
+                  <p className="mt-6 text-2xl font-black text-gray-800 animate-pulse">
+                    Broadcasting alerts now...
                   </p>
                 </div>
               ) : null}
 
-              {status === "error" ? (
-                <div className="rounded-md bg-red-50 border-2 border-danger p-4">
-                  <h3 className="text-lg font-bold text-danger">Alert could not send via internet</h3>
-                  <p className="mt-1 text-sm text-gray-700">{error}</p>
+              {/* SENT STATE */}
+              {status === "sent" ? (
+                <div className="rounded-xl bg-green-50 border-4 border-leaf p-6 text-center shadow-soft">
+                  <BadgeCheck className="mx-auto h-16 w-16 text-leaf animate-bounce" />
+                  <h3 className="mt-4 text-3xl font-black text-leaf tracking-tight">ALERTS DISPATCHED!</h3>
+                  <p className="mt-3 text-lg text-gray-800 font-bold leading-normal">
+                    Your family contacts and Buddhi team have been alerted. Keep your phone line free.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={cancelSosFlow}
+                    className="touch-button mt-6 w-full bg-ink text-white font-bold text-lg border-2 border-ink"
+                  >
+                    Close Screen
+                  </button>
+                </div>
+              ) : null}
 
-                  <div className="mt-5 grid gap-3">
+              {/* ERROR / OFFLINE FALLBACK STATE */}
+              {status === "error" ? (
+                <div className="rounded-xl bg-red-50 border-4 border-danger p-6">
+                  <h3 className="text-2xl font-black text-danger">Internet Dispatch Failed</h3>
+                  <p className="mt-2 text-base text-gray-800 font-semibold">{error}</p>
+
+                  <div className="mt-6 grid gap-4">
                     {/* SMS Fallback Button */}
                     <a
-                      className="touch-button flex items-center justify-center gap-2 bg-trust text-white text-center text-lg font-bold min-h-14 border-2 border-trust"
+                      className="touch-button flex items-center justify-center gap-3 bg-trust text-white text-center text-xl font-extrabold min-h-16 border-2 border-trust shadow-soft"
                       href={`sms:${savedPhone || "+912226422222"}?body=${encodeURIComponent(smsBody)}`}
+                      onClick={cancelSosFlow}
                     >
-                      <Send className="h-6 w-6" />
+                      <Send className="h-6 w-6 fill-white animate-pulse" />
                       Send SMS Alert (No Internet)
                     </a>
                     {/* Call 112 Backup */}
                     <a
-                      className="touch-button flex items-center justify-center gap-2 bg-danger text-white text-center text-lg font-bold min-h-14 border-2 border-danger"
+                      className="touch-button flex items-center justify-center gap-3 bg-danger text-white text-center text-xl font-extrabold min-h-16 border-2 border-danger shadow-soft"
                       href="tel:112"
                     >
                       <Phone className="h-6 w-6 animate-bounce" />
-                      Call Emergency (112)
+                      Call Emergency Help (112)
                     </a>
+                    <button
+                      type="button"
+                      onClick={cancelSosFlow}
+                      className="touch-button bg-white text-ink border-2 border-gray-300 font-bold text-base mt-2"
+                    >
+                      Cancel / Close
+                    </button>
                   </div>
-                </div>
-              ) : null}
-
-              {status === "idle" ? (
-                <div className="mt-4 text-center">
-                  <p className="text-lg text-gray-800">Press Confirm to trigger the SOS manually.</p>
-                  <button type="button" onClick={sendSos} className="touch-button w-full bg-danger text-white font-bold mt-4 min-h-14 text-lg">
-                    Confirm SOS Alert
-                  </button>
                 </div>
               ) : null}
             </div>
