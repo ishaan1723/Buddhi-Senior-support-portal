@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { X } from "lucide-react";
 
 type Summary = {
   vendorsPending: number;
@@ -29,6 +30,11 @@ export function AdminDashboard() {
   const [rows, setRows] = useState<AdminRow[]>([]);
   const [error, setError] = useState("");
 
+  // Categories and modals states
+  const [categories, setCategories] = useState<any[]>([]);
+  const [showAddVendor, setShowAddVendor] = useState(false);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+
   useEffect(() => {
     const saved = window.localStorage.getItem("buddhi_admin_token") || "";
     setToken(saved);
@@ -37,7 +43,17 @@ export function AdminDashboard() {
   useEffect(() => {
     if (!token) return;
     void loadDashboard(token);
+    void loadCategories(token);
   }, [token]);
+
+  async function loadCategories(adminToken = token) {
+    try {
+      const data = await apiFetch<any[]>("/api/admin/categories", { token: adminToken });
+      setCategories(data);
+    } catch (err) {
+      console.error("Could not load categories", err);
+    }
+  }
 
   async function loadDashboard(nextToken = token) {
     setError("");
@@ -50,6 +66,51 @@ export function AdminDashboard() {
       setRows(nextRows);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load admin data");
+    }
+  }
+
+  async function handleCreateCategory(formData: FormData) {
+    setError("");
+    const name = formData.get("name") as string;
+    const slug = formData.get("slug") as string || name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const description = formData.get("description") as string;
+
+    try {
+      await apiFetch("/api/admin/categories", {
+        method: "POST",
+        body: JSON.stringify({ name, slug, description }),
+        token
+      });
+      setShowAddCategory(false);
+      await loadCategories(token);
+      await loadDashboard(token);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create category");
+    }
+  }
+
+  async function handleCreateVendor(formData: FormData) {
+    setError("");
+    const categoryId = formData.get("categoryId") as string;
+    const name = formData.get("name") as string;
+    const phone = formData.get("phone") as string;
+    const whatsapp = formData.get("whatsapp") as string || phone;
+    const address = formData.get("address") as string;
+    const locality = formData.get("locality") as string || "H-West Ward";
+    const description = formData.get("description") as string;
+    const yearsExperienceStr = formData.get("yearsExperience") as string;
+    const yearsExperience = yearsExperienceStr ? parseInt(yearsExperienceStr, 10) : undefined;
+
+    try {
+      await apiFetch("/api/admin/vendors", {
+        method: "POST",
+        body: JSON.stringify({ categoryId, name, phone, whatsapp, address, locality, description, yearsExperience }),
+        token
+      });
+      setShowAddVendor(false);
+      await loadDashboard(token);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create vendor");
     }
   }
 
@@ -414,6 +475,25 @@ export function AdminDashboard() {
         ))}
       </div>
 
+      {active === "vendors" && (
+        <div className="mt-4 flex gap-3 flex-wrap">
+          <button
+            onClick={() => setShowAddVendor(true)}
+            className="touch-button bg-trust text-white hover:bg-sky-850 text-sm font-extrabold px-4 py-2 min-h-12 border-2 border-trust"
+            type="button"
+          >
+            ➕ Add New Vendor
+          </button>
+          <button
+            onClick={() => setShowAddCategory(true)}
+            className="touch-button bg-white text-trust border-2 border-trust hover:bg-sky-50 text-sm font-extrabold px-4 py-2 min-h-12"
+            type="button"
+          >
+            ➕ Add New Category
+          </button>
+        </div>
+      )}
+
       {error ? <p className="mt-4 rounded-md bg-red-50 p-3 text-danger">{error}</p> : null}
       <div className="mt-4 grid gap-3">
         {rows.map((row) => (
@@ -444,7 +524,104 @@ export function AdminDashboard() {
             </div>
           </article>
         ))}
-        {rows.length === 0 ? <p className="panel text-gray-500 text-center py-6">No records found for this section.</p> : null}
+      {/* ADD CATEGORY MODAL */}
+      {showAddCategory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 animate-in fade-in duration-200" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-2xl border-4 border-ink bg-white p-6 text-ink shadow-[8px_8px_0px_0px_rgba(17,24,39,1)]">
+            <div className="flex items-center justify-between border-b-2 border-gray-200 pb-3">
+              <h3 className="text-2xl font-black text-saffron uppercase">Add Category</h3>
+              <button
+                onClick={() => setShowAddCategory(false)}
+                className="rounded-lg border-2 border-gray-300 p-1.5 hover:bg-gray-100"
+                type="button"
+              >
+                <X className="h-5 w-5 text-gray-700" />
+              </button>
+            </div>
+            <form action={handleCreateCategory} className="mt-4 space-y-4">
+              <div>
+                <label className="label" htmlFor="cat-name">Category Name</label>
+                <input className="input" id="cat-name" name="name" type="text" placeholder="e.g. Physiotherapists" required />
+              </div>
+              <div>
+                <label className="label" htmlFor="cat-slug">URL Slug (lowercase & hyphens)</label>
+                <input className="input" id="cat-slug" name="slug" type="text" placeholder="e.g. physiotherapists" pattern="^[a-z0-9-]+$" title="Lowercase, numbers, and hyphens only" />
+              </div>
+              <div>
+                <label className="label" htmlFor="cat-desc">Description</label>
+                <textarea className="input min-h-24 py-2" id="cat-desc" name="description" placeholder="Short summary..." />
+              </div>
+              <button className="touch-button w-full bg-trust text-white font-bold text-lg min-h-14 mt-2 border-2 border-trust" type="submit">
+                Create Category
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD VENDOR MODAL */}
+      {showAddVendor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 animate-in fade-in duration-200" role="dialog" aria-modal="true">
+          <div className="w-full max-w-lg rounded-2xl border-4 border-ink bg-white p-6 text-ink shadow-[8px_8px_0px_0px_rgba(17,24,39,1)] max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b-2 border-gray-200 pb-3">
+              <h3 className="text-2xl font-black text-saffron uppercase">Add Vendor</h3>
+              <button
+                onClick={() => setShowAddVendor(false)}
+                className="rounded-lg border-2 border-gray-300 p-1.5 hover:bg-gray-100"
+                type="button"
+              >
+                <X className="h-5 w-5 text-gray-700" />
+              </button>
+            </div>
+            <form action={handleCreateVendor} className="mt-4 space-y-4">
+              <div>
+                <label className="label" htmlFor="vendor-cat">Category</label>
+                <select className="input py-2" id="vendor-cat" name="categoryId" required>
+                  <option value="">Select category...</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label" htmlFor="vendor-name">Name</label>
+                <input className="input" id="vendor-name" name="name" type="text" placeholder="e.g. Dr. Rohan Verma" required />
+              </div>
+              <div className="grid gap-3 grid-cols-2">
+                <div>
+                  <label className="label" htmlFor="vendor-phone">Phone Number</label>
+                  <input className="input" id="vendor-phone" name="phone" type="tel" placeholder="e.g. +919820000000" required />
+                </div>
+                <div>
+                  <label className="label" htmlFor="vendor-wa">WhatsApp Phone</label>
+                  <input className="input" id="vendor-wa" name="whatsapp" type="tel" placeholder="e.g. +919820000000" />
+                </div>
+              </div>
+              <div>
+                <label className="label" htmlFor="vendor-addr">Street Address</label>
+                <input className="input" id="vendor-addr" name="address" type="text" placeholder="e.g. Linking Road, Khar West" required />
+              </div>
+              <div className="grid gap-3 grid-cols-2">
+                <div>
+                  <label className="label" htmlFor="vendor-loc">Locality</label>
+                  <input className="input" id="vendor-loc" name="locality" type="text" defaultValue="H-West Ward" required />
+                </div>
+                <div>
+                  <label className="label" htmlFor="vendor-exp">Years of Experience</label>
+                  <input className="input" id="vendor-exp" name="yearsExperience" type="number" min="0" max="80" defaultValue="5" />
+                </div>
+              </div>
+              <div>
+                <label className="label" htmlFor="vendor-desc">Description of Service</label>
+                <textarea className="input min-h-24 py-2" id="vendor-desc" name="description" placeholder="Trusted services description..." required />
+              </div>
+              <button className="touch-button w-full bg-trust text-white font-bold text-lg min-h-14 mt-2 border-2 border-trust" type="submit">
+                Register & Approve Vendor
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );
