@@ -103,30 +103,42 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* PWA INSTALLATION BANNER */}
-      {!isStandalone && (deferredPrompt || isIos) ? (
+      {/* PWA INSTALLATION BANNER FOR ANDROID/CHROME */}
+      {!isStandalone && deferredPrompt ? (
         <section className="mt-6">
           <div className="premium-card bg-amber-50 border-saffron border-l-8 flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-black text-saffron uppercase">📲 Install Buddhi App</h2>
-              {deferredPrompt ? (
-                <p className="mt-1 text-base text-gray-700 font-bold">
-                  Add Buddhi directly to your home screen for quick, one-click access!
-                </p>
-              ) : (
-                <p className="mt-1 text-base text-gray-700 font-bold">
-                  iPhone User? Tap Safari's share icon <span className="text-trust font-black">⎋</span> (at bottom) and choose <strong className="text-ink">"Add to Home Screen"</strong>.
-                </p>
-              )}
+              <p className="mt-1 text-base text-gray-700 font-bold">
+                Add Buddhi directly to your home screen for quick, one-click access!
+              </p>
             </div>
-            {deferredPrompt && (
-              <button
-                onClick={handleInstallApp}
-                className="btn-tactile bg-saffron text-white border-saffron hover:bg-amber-700 w-full md:w-auto shrink-0"
-              >
-                Install App Now
-              </button>
-            )}
+            <button
+              onClick={handleInstallApp}
+              className="btn-tactile bg-saffron text-white border-saffron hover:bg-amber-700 w-full md:w-auto shrink-0"
+            >
+              Install App Now
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      {/* STICKY INSTALLATION GUIDE FOR IOS/SAFARI */}
+      {!isStandalone && isIos ? (
+        <section className="fixed bottom-20 left-4 right-4 z-40">
+          <div className="premium-card bg-amber-50 border-saffron border-t-8 p-5 text-ink shadow-[6px_6px_0px_0px_rgba(17,24,39,1)]">
+            <h2 className="text-xl font-black text-saffron uppercase flex items-center gap-2">
+              📲 Install Buddhi on iPhone
+            </h2>
+            <div className="mt-2 text-sm text-gray-705 font-extrabold space-y-1.5">
+              <p>1. Open this page in the <strong className="text-trust font-black">Safari</strong> app (not inside WhatsApp).</p>
+              <p>2. Tap Safari's Share button <span className="inline-block border border-gray-400 bg-white px-2 py-0.5 rounded text-xs font-black text-trust">[↑]</span> at the bottom.</p>
+              <p>3. Scroll down and choose <strong className="text-ink font-black">"Add to Home Screen"</strong>.</p>
+            </div>
+            <div className="mt-2 flex flex-col items-center">
+              <span className="text-2xl animate-bounce text-saffron font-black">↓</span>
+              <span className="text-xs uppercase tracking-wider text-gray-500 font-extrabold">Tap Safari Share Button Below</span>
+            </div>
           </div>
         </section>
       ) : null}
