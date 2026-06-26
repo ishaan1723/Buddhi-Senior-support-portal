@@ -136,3 +136,13 @@ export async function listFeedback(_req: Request, res: Response) {
     })
   );
 }
+
+export async function deleteVendor(req: Request, res: Response) {
+  const id = req.params.id as string;
+  const vendor = await prisma.vendor.findUnique({ where: { id } });
+  if (!vendor) {
+    throw new HttpError(404, "Vendor not found", "NOT_FOUND");
+  }
+  await prisma.vendor.delete({ where: { id } });
+  res.json({ ok: true, message: "Vendor deleted successfully" });
+}

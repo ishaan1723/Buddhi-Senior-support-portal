@@ -20,6 +20,7 @@ adminRouter.post("/vendors", validateBody(adminVendorSchema), admin.createVendor
 adminRouter.post("/vendors/:id/approve", admin.approveVendor);
 adminRouter.post("/vendors/:id/reject", admin.rejectVendor);
 adminRouter.put("/vendors/:id/verification", validateBody(adminVerificationSchema), admin.updateVerification);
+adminRouter.delete("/vendors/:id", admin.deleteVendor);
 adminRouter.get("/categories", admin.listCategories);
 adminRouter.post("/categories", validateBody(categorySchema), admin.createCategory);
 adminRouter.get("/sos", sosHistory);

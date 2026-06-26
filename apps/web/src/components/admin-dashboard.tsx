@@ -192,6 +192,17 @@ export function AdminDashboard() {
     }
   }
 
+  async function deleteVendor(id: string) {
+    if (!window.confirm("Are you sure you want to delete this vendor?")) return;
+    setError("");
+    try {
+      await apiFetch(`/api/admin/vendors/${id}`, { method: "DELETE", token });
+      await switchTab("vendors");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete vendor");
+    }
+  }
+
   function getRowTitle(row: AdminRow) {
     switch (active) {
       case "feedback": {
@@ -532,6 +543,9 @@ export function AdminDashboard() {
                       </button>
                       <button className="touch-button bg-danger text-white text-xs px-3 py-1 font-bold min-h-10" type="button" onClick={() => vendorAction(row.id, "reject")}>
                         Reject
+                      </button>
+                      <button className="touch-button bg-gray-500 hover:bg-gray-600 text-white text-xs px-3 py-1 font-bold min-h-10" type="button" onClick={() => deleteVendor(row.id)}>
+                        Delete
                       </button>
                     </div>
                   ) : null}
