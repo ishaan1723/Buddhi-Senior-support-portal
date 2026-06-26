@@ -50,6 +50,13 @@ export async function apiFetch<T>(path: string, init?: ApiInit): Promise<T> {
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({ error: "Request failed" }));
+    if (body.code === "VALIDATION_ERROR" && body.details?.fieldErrors) {
+      const fieldErrors = body.details.fieldErrors;
+      const messages = Object.entries(fieldErrors)
+        .map(([field, errs]) => `${field}: ${(errs as string[]).join(", ")}`)
+        .join("; ");
+      throw new Error(`Validation failed: ${messages}`);
+    }
     throw new Error(body.error || "Request failed");
   }
   return response.json() as Promise<T>;
