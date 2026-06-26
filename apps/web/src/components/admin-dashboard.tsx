@@ -128,6 +128,13 @@ export function AdminDashboard() {
     }
   }
 
+  function handleSignOut() {
+    window.localStorage.removeItem("buddhi_admin_token");
+    setToken("");
+    setSummary(null);
+    setRows([]);
+  }
+
   async function switchTab(tab: (typeof tabs)[number][0]) {
     setActive(tab);
     if (!token) return;
@@ -450,6 +457,17 @@ export function AdminDashboard() {
 
   return (
     <div className="mt-4">
+      {/* Sign Out Button */}
+      <div className="flex justify-end mb-6">
+        <button
+          onClick={handleSignOut}
+          className="btn-tactile bg-white text-danger hover:bg-red-50 text-sm font-extrabold px-4 py-2 min-h-12 border-2 border-ink shadow-[4px_4px_0px_0px_rgba(17,24,39,1)]"
+          type="button"
+        >
+          🚪 Sign Out
+        </button>
+      </div>
+
       {summary ? (
         <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5" aria-label="Admin summary">
           <Metric label="Pending vendors" value={summary.vendorsPending} />
