@@ -4,6 +4,7 @@ import { getVendors } from "@/lib/api";
 
 const categories = [
   ["Doctors", "doctors"],
+  ["Chemists", "chemists"],
   ["Nurses", "nurses"],
   ["Caregivers", "caregivers"],
   ["Electricians", "electricians"],

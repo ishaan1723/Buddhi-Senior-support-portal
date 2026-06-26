@@ -5,6 +5,7 @@ const prisma = new PrismaClient();
 
 const categories = [
   ["Doctors", "doctors"],
+  ["Chemists", "chemists"],
   ["Nurses", "nurses"],
   ["Caregivers", "caregivers"],
   ["Electricians", "electricians"],
@@ -24,6 +25,7 @@ async function main() {
   }
 
   const doctorCategory = await prisma.category.findUniqueOrThrow({ where: { slug: "doctors" } });
+  const chemistCategory = await prisma.category.findUniqueOrThrow({ where: { slug: "chemists" } });
   const nurseCategory = await prisma.category.findUniqueOrThrow({ where: { slug: "nurses" } });
   const plumberCategory = await prisma.category.findUniqueOrThrow({ where: { slug: "plumbers" } });
 
@@ -36,6 +38,15 @@ async function main() {
       address: "Linking Road, Khar West",
       description: "General physician available for senior-friendly home consultations.",
       yearsExperience: 18
+    },
+    {
+      categoryId: chemistCategory.id,
+      name: "Noble Chemist Khar",
+      phone: "+919820000004",
+      whatsapp: "+919820000004",
+      address: "Khar West, near Station",
+      description: "24/7 medical store offering senior priority home delivery of medicines.",
+      yearsExperience: 15
     },
     {
       categoryId: nurseCategory.id,
