@@ -52,6 +52,9 @@ export function AdminDashboard() {
       setCategories(data);
     } catch (err) {
       console.error("Could not load categories", err);
+      if (err instanceof Error && (err.message.includes("expired") || err.message.includes("required") || err.message.includes("Invalid token"))) {
+        handleSignOut();
+      }
     }
   }
 
@@ -66,6 +69,9 @@ export function AdminDashboard() {
       setRows(nextRows);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load admin data");
+      if (err instanceof Error && (err.message.includes("expired") || err.message.includes("required") || err.message.includes("Invalid token"))) {
+        handleSignOut();
+      }
     }
   }
 
@@ -143,6 +149,9 @@ export function AdminDashboard() {
       setRows(await apiFetch<AdminRow[]>(`/api/admin/${tab}`, { token }));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load tab");
+      if (err instanceof Error && (err.message.includes("expired") || err.message.includes("required") || err.message.includes("Invalid token"))) {
+        handleSignOut();
+      }
     }
   }
 
