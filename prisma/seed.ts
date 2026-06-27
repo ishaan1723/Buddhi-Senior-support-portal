@@ -12,7 +12,8 @@ const categories = [
   ["Plumbers", "plumbers"],
   ["Medical Equipment", "medical-equipment"],
   ["Physiotherapists", "physiotherapists"],
-  ["Home Services", "home-services"]
+  ["Home Services", "home-services"],
+  ["Advocates", "advocates"]
 ];
 
 async function main() {
@@ -28,6 +29,7 @@ async function main() {
   const chemistCategory = await prisma.category.findUniqueOrThrow({ where: { slug: "chemists" } });
   const nurseCategory = await prisma.category.findUniqueOrThrow({ where: { slug: "nurses" } });
   const plumberCategory = await prisma.category.findUniqueOrThrow({ where: { slug: "plumbers" } });
+  const advocateCategory = await prisma.category.findUniqueOrThrow({ where: { slug: "advocates" } });
 
   const vendors = [
     {
@@ -65,6 +67,15 @@ async function main() {
       address: "Khar Danda Road",
       description: "Emergency plumbing visits and senior-priority appointments.",
       yearsExperience: 9
+    },
+    {
+      categoryId: advocateCategory.id,
+      name: "Adv. Ramesh Mehta",
+      phone: "+919820000005",
+      whatsapp: "+919820000005",
+      address: "Linking Road, Bandra West",
+      description: "Legal consultant specializing in senior citizen estate planning, Wills, and HUF setup.",
+      yearsExperience: 22
     }
   ];
 

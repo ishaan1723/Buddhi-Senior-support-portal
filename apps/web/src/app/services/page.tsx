@@ -11,7 +11,8 @@ const categories = [
   ["Plumbers", "plumbers"],
   ["Medical Equipment", "medical-equipment"],
   ["Physiotherapists", "physiotherapists"],
-  ["Home Services", "home-services"]
+  ["Home Services", "home-services"],
+  ["Advocates", "advocates"]
 ];
 
 export default async function ServicesPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
