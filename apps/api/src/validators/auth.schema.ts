@@ -15,3 +15,8 @@ export const adminLoginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8)
 });
+
+export const loginFirebaseSchema = z.object({
+  idToken: z.string().min(1),
+  fullName: z.string().min(2).max(120).optional()
+});

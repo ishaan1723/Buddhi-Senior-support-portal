@@ -15,3 +15,8 @@ export async function adminLogin(req: Request, res: Response) {
   const result = await authService.adminLogin(req.body);
   res.json(result);
 }
+
+export async function loginFirebase(req: Request, res: Response) {
+  const result = await authService.loginFirebase(req.body);
+  res.json(result);
+}

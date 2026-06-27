@@ -5,6 +5,7 @@ import { normalizePhone } from "../utils/phone.js";
 import { signAdminToken, signUserToken } from "../utils/tokens.js";
 import { HttpError } from "../utils/http-error.js";
 import { sendSms } from "./sms.service.js";
+import { verifyFirebaseIdToken } from "../utils/firebase.js";
 
 function generateOtp() {
   return env.OTP_TEST_CODE || String(Math.floor(100000 + Math.random() * 900000));
@@ -69,5 +70,36 @@ export async function adminLogin(input: { email: string; password: string }) {
   return {
     token: signAdminToken(admin.id),
     admin: { id: admin.id, fullName: admin.fullName, email: admin.email }
+  };
+}
+
+export async function loginFirebase(input: { idToken: string; fullName?: string }) {
+  const projectId = env.FIREBASE_PROJECT_ID;
+  if (!projectId) {
+    throw new HttpError(500, "Firebase configuration is missing on the server", "FIREBASE_CONFIG_MISSING");
+  }
+
+  let decoded;
+  try {
+    decoded = await verifyFirebaseIdToken(input.idToken, projectId);
+  } catch (error) {
+    throw new HttpError(401, "Invalid Firebase token", "FIREBASE_AUTH_FAILED");
+  }
+
+  const phoneRaw = decoded.phone_number || decoded.phone;
+  if (!phoneRaw) {
+    throw new HttpError(400, "Phone number is missing in Firebase token", "FIREBASE_PHONE_MISSING");
+  }
+
+  const phone = normalizePhone(phoneRaw);
+  const user = await prisma.user.upsert({
+    where: { phone },
+    update: input.fullName ? { fullName: input.fullName } : {},
+    create: { phone, fullName: input.fullName || "Buddhi Member" }
+  });
+
+  return {
+    token: signUserToken({ userId: user.id, phone: user.phone, role: user.role }),
+    user
   };
 }

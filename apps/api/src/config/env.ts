@@ -23,7 +23,8 @@ const envSchema = z.object({
   TWILIO_FROM_PHONE: z.string().optional(),
   WHATSAPP_PROVIDER: z.enum(["mock", "meta"]).default("mock"),
   WHATSAPP_BUSINESS_TOKEN: z.string().optional(),
-  WHATSAPP_PHONE_NUMBER_ID: z.string().optional()
+  WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
+  FIREBASE_PROJECT_ID: z.string().optional()
 });
 
 export const env = envSchema.parse(process.env);
