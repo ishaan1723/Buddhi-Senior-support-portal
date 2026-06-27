@@ -47,8 +47,9 @@ export function Header() {
             {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
 
-          <Link href="/" className="text-2xl font-black tracking-tight text-trust" aria-label="Buddhi home">
-            Buddhi <span className="text-saffron">2026</span>
+          <Link href="/" className="flex items-center gap-2 text-2xl font-black tracking-tight text-trust" aria-label="Buddhi home">
+            <img src="/icons/icon-192.png" alt="Buddhi logo" className="h-8 w-8 rounded border border-ink object-cover" />
+            <span>Buddhi <span className="text-saffron">2026</span></span>
           </Link>
         </div>
 
