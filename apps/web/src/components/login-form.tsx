@@ -80,12 +80,6 @@ export function LoginForm() {
     } catch (err: any) {
       console.error(err);
       setError(err instanceof Error ? err.message : "Failed to send OTP. Ensure the phone number includes the country code (e.g. +91).");
-      
-      // Reset Recaptcha on failure
-      if (recaptchaVerifierRef.current) {
-        recaptchaVerifierRef.current.clear();
-        recaptchaVerifierRef.current = null;
-      }
     } finally {
       setLoading(false);
     }
