@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   description: "Emergency help, trusted local services, and concierge support for H-West Ward seniors.",
   manifest: "/manifest.json",
   icons: {
+    icon: "/icons/icon-192.png",
     apple: "/icons/apple-touch-icon.png",
   }
 };
