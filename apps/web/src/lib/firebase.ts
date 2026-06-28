@@ -7,6 +7,18 @@ const firebaseConfig = {
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
 };
 
+// Safe debug logging to see what config is actually loaded in the browser
+if (typeof window !== "undefined") {
+  const maskedKey = firebaseConfig.apiKey 
+    ? `${firebaseConfig.apiKey.slice(0, 8)}...${firebaseConfig.apiKey.slice(-5)}` 
+    : "UNDEFINED";
+  console.log("DEBUG [Firebase Config]:", {
+    apiKey: maskedKey,
+    authDomain: firebaseConfig.authDomain || "UNDEFINED",
+    projectId: firebaseConfig.projectId || "UNDEFINED"
+  });
+}
+
 let app;
 let auth: any = null;
 
